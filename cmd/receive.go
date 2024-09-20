@@ -4,7 +4,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Businge931/Kafka_and_CLIs/app"
+	// "github.com/Businge931/Kafka_and_CLIs/app"
+	"github.com/Businge931/Kafka_and_CLIs/consumer"
 )
 
 var (
@@ -26,7 +27,7 @@ var receiveCmd = &cobra.Command{
 			log.Printf("You are part of the receiving group: '%s'\n", receiveGroup)
 		}
 		// Call the ReadMessages function from the app package
-		app.ReadMessages(receiveKafkaServer, receiveTopic, startFrom, receiveGroup, false)
+		consumer.ReadMessages(receiveKafkaServer, receiveTopic, startFrom, receiveGroup, false)
 	},
 }
 

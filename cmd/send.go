@@ -4,7 +4,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Businge931/Kafka_and_CLIs/app"
+	// "github.com/Businge931/Kafka_and_CLIs/app"
+	"github.com/Businge931/Kafka_and_CLIs/producer"
 )
 
 var (
@@ -25,7 +26,7 @@ var sendCmd = &cobra.Command{
 			log.Printf("You are sending through the group: '%s'\n", sendGroup)
 		}
 		// Call the SendMessage function from the app package
-		app.SendMessage(sendKafkaServer, sendTopic, sendGroup, false)
+		producer.SendMessage(sendKafkaServer, sendTopic, sendGroup, false)
 	},
 }
 
