@@ -29,7 +29,7 @@ var sendCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func SetupSendCmd() {
 	rootCmd.AddCommand(sendCmd)
 
 	// Define flags for the send command

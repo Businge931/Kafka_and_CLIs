@@ -9,7 +9,7 @@ import (
 )
 
 // SendMessage sends messages to the specified Kafka topic
-func SendMessage(kafkaServer string, topic string, group string, testing bool) {
+func SendMessage(kafkaServer, topic, _ string, testing bool) {
 	// Create Kafka producer
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaServer})
 	if err != nil {
@@ -49,10 +49,9 @@ func SendMessage(kafkaServer string, topic string, group string, testing bool) {
 
 		// Produce message to the specified Kafka topic
 		err := producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: int32(kafka.PartitionAny)},
+			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 			Value:          []byte(message),
 		}, nil)
-
 		if err != nil {
 			log.Printf("failed to produce message to: %s", topic)
 		}
@@ -67,7 +66,7 @@ func SendMessage(kafkaServer string, topic string, group string, testing bool) {
 }
 
 // ReadMessages consumes messages from the specified Kafka topic
-func ReadMessages(kafkaServer string, topic string, startFrom string, group string, testing bool) {
+func ReadMessages(kafkaServer, topic, startFrom, group string, testing bool) {
 	// Kafka consumer configuration
 	offsetReset := "earliest" // Default to start from the beginning
 	if startFrom == "latest" {

@@ -30,7 +30,7 @@ var receiveCmd = &cobra.Command{
 	},
 }
 
-func init() {
+func SetupReceiveCmd() {
 	rootCmd.AddCommand(receiveCmd)
 
 	// Define flags for the receive command

@@ -8,5 +8,11 @@ import (
 )
 
 func main() {
+	// Call the setup functions to initialize commands
+	cmd.SetupRootCmd()
+	cmd.SetupReceiveCmd()
+	cmd.SetupSendCmd()
+
+	// Execute the root command
 	cmd.Execute()
 }
