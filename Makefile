@@ -32,3 +32,9 @@ test-coverage: ## Run tests and generate coverage profile
 
 test-coverage-browser: ## Check the test coverage in the browser
 	cd $(TEST_PATH) && go tool cover -html=coverage.out -o /tmp/coverage.html && wslview /tmp/coverage.html
+
+send:
+	go run main.go send --channel jim-test --server localhost:9092 --group tests
+
+receive:
+	go run main.go receive --channel jim-test --from start --server localhost:9092 --group tests
