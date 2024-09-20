@@ -18,14 +18,14 @@ func ReadMessages(kafkaServer, topic, startFrom, group string, testing bool) {
 	defer consumer.Close()
 
 	if err := subscribeToTopic(consumer, topic); err != nil {
-		log.Printf("Failed to subscribe to topic: %s\n", err)
+		log.Errorf("Failed to subscribe to topic: %s\n", err)
 		return
 	}
 
 	log.Println("Waiting for messages...")
 
 	if err := readMessages(consumer, testing); err != nil {
-		log.Printf("Error reading messages: %v\n", err)
+		log.Errorf("Error reading messages: %v\n", err)
 	}
 
 	log.Println("Exiting consumer...")
@@ -63,6 +63,6 @@ func readMessages(consumer *kafka.Consumer, testing bool) error {
 		} else {
 			return fmt.Errorf("consumer error: %v", err)
 		}
-	}
+	}                                                                   
 	return nil
 }
