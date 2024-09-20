@@ -4,7 +4,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	// "github.com/Businge931/Kafka_and_CLIs/app"
 	"github.com/Businge931/Kafka_and_CLIs/producer"
 )
 
