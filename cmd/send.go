@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
 	"github.com/Businge931/Kafka_and_CLIs/app"
 )
 
@@ -16,12 +16,13 @@ var (
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send messages to Kafka",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		// Echo the parameters to the user
-		fmt.Printf("You have decided to send to the channel: '%s'\n", sendTopic)
-		fmt.Printf("You are sending through the server: '%s'\n", sendKafkaServer)
+		log.Printf("You have decided to send to the channel: '%s'\n", sendTopic)
+		log.Printf("You are sending through the server: '%s'\n", sendKafkaServer)
+
 		if sendGroup != "" {
-			fmt.Printf("You are sending through the group: '%s'\n", sendGroup)
+			log.Printf("You are sending through the group: '%s'\n", sendGroup)
 		}
 		// Call the SendMessage function from the app package
 		app.SendMessage(sendKafkaServer, sendTopic, sendGroup, false)
@@ -36,6 +37,13 @@ func init() {
 	sendCmd.Flags().StringVar(&sendTopic, "channel", "", "Kafka topic (required)")
 	sendCmd.Flags().StringVar(&sendGroup, "group", "", "Group name (optional)")
 
-	sendCmd.MarkFlagRequired("server")
-	sendCmd.MarkFlagRequired("channel")
+	err := sendCmd.MarkFlagRequired("server")
+	if err != nil {
+		log.Printf("failed to define flag: %s", sendKafkaServer)
+	}
+
+	err = sendCmd.MarkFlagRequired("channel")
+	if err != nil {
+		log.Printf("failed to define flag: %s", sendTopic)
+	}
 }
