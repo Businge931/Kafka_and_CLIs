@@ -8,70 +8,83 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-
-func SendMessage(kafkaServer, topic, _ string, testing bool) {
-    producer, err := createProducer(kafkaServer)
-    if err != nil {
-        log.Printf("Failed to create producer: %s\n", err)
-        return
-    }
-    defer producer.Close()
-
-    startDeliveryReportHandler(producer)
-
-    for {
-        message := getMessageInput(testing)
-        if message == "q" {
-            break
-        }
-
-        if err := _sendMessage(producer, topic, message); err != nil {
-            log.Printf("Failed to produce message: %s", err)
-        }
-
-        flushProducer(producer)
-
-        if testing {
-            return
-        }
-    }
+// MessageProducer defines the interface for producing messages
+type MessageProducer interface {
+	SendMessage(topic, message string) error
+	Close()
 }
 
-func createProducer(kafkaServer string) (*kafka.Producer, error) {
-    return kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaServer})
+// KafkaProducer implements the MessageProducer interface
+type KafkaProducer struct {
+	producer *kafka.Producer
 }
 
-func startDeliveryReportHandler(producer *kafka.Producer) {
-    go func() {
-        for e := range producer.Events() {
-            if ev, ok := e.(*kafka.Message); ok {
-                if ev.TopicPartition.Error != nil {
-                    log.Printf("Delivery failed: %v\n", ev.TopicPartition)
-                } else {
-                    log.Printf("Delivered message to %v\n", ev.TopicPartition)
-                }
-            }
-        }
-    }()
+// NewKafkaProducer creates a new KafkaProducer
+func NewKafkaProducer(kafkaServer string) (*KafkaProducer, error) {
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaServer})
+	if err != nil {
+		return nil, err
+	}
+
+	kp := &KafkaProducer{producer: producer}
+	kp.startDeliveryReportHandler()
+	return kp, nil
 }
 
+// SendMessage sends a message to the Kafka topic
+func (kp *KafkaProducer) SendMessage(topic, message string) error {
+	return kp.producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Value:          []byte(message),
+	}, nil)
+}
+
+// Close flushes and closes the producer
+func (kp *KafkaProducer) Close() {
+	kp.producer.Flush(15 * 1000)
+	kp.producer.Close()
+}
+
+// startDeliveryReportHandler starts a goroutine to handle delivery reports
+func (kp *KafkaProducer) startDeliveryReportHandler() {
+	go func() {
+		for e := range kp.producer.Events() {
+			if ev, ok := e.(*kafka.Message); ok {
+				if ev.TopicPartition.Error != nil {
+					log.Printf("Delivery failed: %v\\n", ev.TopicPartition)
+				} else {
+					log.Printf("Delivered message to %v\\n", ev.TopicPartition)
+				}
+			}
+		}
+	}()
+}
+
+// getMessageInput is used to get input from the user or return a test message
 func getMessageInput(testing bool) string {
-    if testing {
-        return "Test message"
-    }
-    reader := bufio.NewReader(os.Stdin)
-    log.Print("Enter message or 'q' to quit: ")
-    message, _ := reader.ReadString('\n')
-    return message[:len(message)-1]
+	if testing {
+		return "Test message"
+	}
+	reader := bufio.NewReader(os.Stdin)
+	log.Print("Enter message or 'q' to quit: ")
+	message, _ := reader.ReadString('\n')
+	return message[:len(message)-1]
 }
 
-func _sendMessage(producer *kafka.Producer, topic, message string) error {
-    return producer.Produce(&kafka.Message{
-        TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-        Value:          []byte(message),
-    }, nil)
-}
+// Producer logic to send messages
+func ProduceMessages(kp MessageProducer, topic string, testing bool) {
+	for {
+		message := getMessageInput(testing)
+		if message == "q" {
+			break
+		}
 
-func flushProducer(producer *kafka.Producer) {
-    producer.Flush(15 * 1000)
+		if err := kp.SendMessage(topic, message); err != nil {
+			log.Printf("Failed to produce message: %s", err)
+		}
+
+		if testing {
+			return
+		}
+	}
 }

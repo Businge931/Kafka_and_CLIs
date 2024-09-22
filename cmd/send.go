@@ -24,8 +24,16 @@ var sendCmd = &cobra.Command{
 		if sendGroup != "" {
 			log.Printf("You are sending through the group: '%s'\n", sendGroup)
 		}
-		// Call the SendMessage function from the app package
-		producer.SendMessage(sendKafkaServer, sendTopic, sendGroup, false)
+
+		// Create a new producer
+		kp, err := producer.NewKafkaProducer(sendKafkaServer)
+		if err != nil {
+			log.Fatalf("Failed to create Kafka producer: %s", err)
+		}
+		defer kp.Close()
+
+		// Call the ProduceMessages function
+		producer.ProduceMessages(kp, sendTopic, false)
 	},
 }
 

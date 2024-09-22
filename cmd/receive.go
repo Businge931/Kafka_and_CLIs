@@ -22,11 +22,22 @@ var receiveCmd = &cobra.Command{
 		log.Printf("You are receiving from the channel: '%s'\n", receiveTopic)
 		log.Printf("You are receiving from the '%s'\n", startFrom)
 		log.Printf("You are receiving through the server: '%s'\n", receiveKafkaServer)
+
 		if receiveGroup != "" {
 			log.Printf("You are part of the receiving group: '%s'\n", receiveGroup)
 		}
-		// Call the ReadMessages function from the app package
-		consumer.ReadMessages(receiveKafkaServer, receiveTopic, startFrom, receiveGroup, false)
+
+		// Create a kafka consumer
+		kc, err := consumer.NewKafkaConsumer(receiveKafkaServer, receiveGroup, startFrom)
+		if err != nil {
+			log.Fatalf("Failed to create Kafka consumer: %s", err)
+		}
+		defer kc.Close()
+
+		// Call the ReadMessages function
+		if err := kc.ReadMessages(receiveTopic, false); err != nil {
+			log.Fatalf("Error reading messages: %v", err)
+		}
 	},
 }
 

@@ -7,30 +7,44 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ReadMessages(kafkaServer, topic, startFrom, group string, testing bool) {
-	config := configureConsumerOptions(startFrom)
+// MessageConsumer defines the interface for consuming messages
+type MessageConsumer interface {
+	ReadMessages(topic string, testing bool) error
+	Close()
+}
 
+// KafkaConsumer implements the MessageConsumer interface
+type KafkaConsumer struct {
+	consumer *kafka.Consumer
+}
+
+// NewKafkaConsumer creates a new KafkaConsumer
+func NewKafkaConsumer(kafkaServer, group, startFrom string) (*KafkaConsumer, error) {
+	config := configureConsumerOptions(startFrom)
 	consumer, err := createConsumer(kafkaServer, group, config)
 	if err != nil {
-		log.Printf("Failed to create consumer: %s\n", err)
-		return
+		return nil, fmt.Errorf("failed to create consumer: %s", err)
 	}
-	defer consumer.Close()
 
-	if err := subscribeToTopic(consumer, topic); err != nil {
-		log.Errorf("Failed to subscribe to topic: %s\n", err)
-		return
+	return &KafkaConsumer{consumer: consumer}, nil
+}
+
+// ReadMessages reads messages from the Kafka topic
+func (kc *KafkaConsumer) ReadMessages(topic string, testing bool) error {
+	if err := kc.consumer.SubscribeTopics([]string{topic}, nil); err != nil {
+		return fmt.Errorf("failed to subscribe to topic: %s", err)
 	}
 
 	log.Println("Waiting for messages...")
-
-	if err := readMessages(consumer, testing); err != nil {
-		log.Errorf("Error reading messages: %v\n", err)
-	}
-
-	log.Println("Exiting consumer...")
+	return readMessages(kc.consumer, testing)
 }
 
+// Close closes the Kafka consumer
+func (kc *KafkaConsumer) Close() {
+	kc.consumer.Close()
+}
+
+// configureConsumerOptions configures Kafka consumer options
 func configureConsumerOptions(startFrom string) kafka.ConfigMap {
 	offsetReset := "earliest"
 	if startFrom == "latest" {
@@ -39,6 +53,7 @@ func configureConsumerOptions(startFrom string) kafka.ConfigMap {
 	return kafka.ConfigMap{"auto.offset.reset": offsetReset}
 }
 
+// createConsumer creates a new Kafka consumer
 func createConsumer(kafkaServer, group string, config kafka.ConfigMap) (*kafka.Consumer, error) {
 	return kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": kafkaServer,
@@ -47,10 +62,7 @@ func createConsumer(kafkaServer, group string, config kafka.ConfigMap) (*kafka.C
 	})
 }
 
-func subscribeToTopic(consumer *kafka.Consumer, topic string) error {
-	return consumer.SubscribeTopics([]string{topic}, nil)
-}
-
+// readMessages reads and processes messages from the Kafka topic
 func readMessages(consumer *kafka.Consumer, testing bool) error {
 	running := true
 	for running {
@@ -63,6 +75,6 @@ func readMessages(consumer *kafka.Consumer, testing bool) error {
 		} else {
 			return fmt.Errorf("consumer error: %v", err)
 		}
-	}                                                                   
+	}
 	return nil
 }
