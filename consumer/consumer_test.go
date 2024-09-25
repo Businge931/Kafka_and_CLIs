@@ -38,7 +38,7 @@ func TestKafkaConsumer_ReadMessages(t *testing.T) {
 		name        string
 		deps        deps
 		args        args
-		beforeFunc  func() // Optional setup
+		beforeFunc  func() 
 		expected    expected
 		expectedErr string
 	}{
