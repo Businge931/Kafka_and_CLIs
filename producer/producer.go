@@ -19,6 +19,9 @@ type KafkaProducer struct {
 	producer *kafka.Producer
 }
 
+// Define a variable that holds the producer creation function
+// var KafkaProducerFactory = NewKafkaProducer
+
 // NewKafkaProducer creates a new KafkaProducer
 func NewKafkaProducer(kafkaServer string) (*KafkaProducer, error) {
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": kafkaServer})
