@@ -11,9 +11,14 @@ var (
 	sendKafkaServer string
 	sendTopic       string
 	sendGroup       string
+
+	// Injected Producer function for testing:  returns the interface producer.MessageProducer, not the concrete *KafkaProducer
+	// CreateProducerFunc = func(server string) (producer.MessageProducer, error) {
+	// 	return producer.NewKafkaProducer(server)
+	// }
 )
 
-var sendCmd = &cobra.Command{
+var SendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Send messages to Kafka",
 	Run: func(_ *cobra.Command, _ []string) {
@@ -25,7 +30,8 @@ var sendCmd = &cobra.Command{
 			log.Printf("You are sending through the group: '%s'\n", sendGroup)
 		}
 
-		// Create a new producer
+		// Create a new producer 
+		// kp, err := CreateProducerFunc(sendKafkaServer)
 		kp, err := producer.NewKafkaProducer(sendKafkaServer)
 		if err != nil {
 			log.Fatalf("Failed to create Kafka producer: %s", err)
@@ -38,19 +44,19 @@ var sendCmd = &cobra.Command{
 }
 
 func SetupSendCmd() {
-	rootCmd.AddCommand(sendCmd)
+	rootCmd.AddCommand(SendCmd)
 
 	// Define flags for the send command
-	sendCmd.Flags().StringVar(&sendKafkaServer, "server", "", "Kafka connection string (required)")
-	sendCmd.Flags().StringVar(&sendTopic, "channel", "", "Kafka topic (required)")
-	sendCmd.Flags().StringVar(&sendGroup, "group", "", "Group name (optional)")
+	SendCmd.Flags().StringVar(&sendKafkaServer, "server", "", "Kafka connection string (required)")
+	SendCmd.Flags().StringVar(&sendTopic, "channel", "", "Kafka topic (required)")
+	SendCmd.Flags().StringVar(&sendGroup, "group", "", "Group name (optional)")
 
-	err := sendCmd.MarkFlagRequired("server")
+	err := SendCmd.MarkFlagRequired("server")
 	if err != nil {
 		log.Printf("failed to define flag: %s", sendKafkaServer)
 	}
 
-	err = sendCmd.MarkFlagRequired("channel")
+	err = SendCmd.MarkFlagRequired("channel")
 	if err != nil {
 		log.Printf("failed to define flag: %s", sendTopic)
 	}
