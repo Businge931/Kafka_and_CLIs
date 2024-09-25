@@ -14,7 +14,7 @@ var (
 	receiveGroup       string
 )
 
-var receiveCmd = &cobra.Command{
+var ReceiveCmd = &cobra.Command{
 	Use:   "receive",
 	Short: "Receive messages from Kafka",
 	Run: func(_ *cobra.Command, _ []string) {
@@ -30,32 +30,35 @@ var receiveCmd = &cobra.Command{
 		// Create a kafka consumer
 		kc, err := consumer.NewKafkaConsumer(receiveKafkaServer, receiveGroup, startFrom)
 		if err != nil {
-			log.Fatalf("Failed to create Kafka consumer: %s", err)
+			// return err
+			log.Errorf("Failed to create Kafka consumer: %s", err)
 		}
 		defer kc.Close()
 
 		// Call the ReadMessages function
 		if err := kc.ReadMessages(receiveTopic, false); err != nil {
-			log.Fatalf("Error reading messages: %v", err)
+			// return err
+			log.Errorf("Error reading messages: %v", err)
 		}
+
 	},
 }
 
 func SetupReceiveCmd() {
-	rootCmd.AddCommand(receiveCmd)
+	rootCmd.AddCommand(ReceiveCmd)
 
 	// Define flags for the receive command
-	receiveCmd.Flags().StringVar(&receiveKafkaServer, "server", "", "Kafka connection string (required)")
-	receiveCmd.Flags().StringVar(&receiveTopic, "channel", "", "Kafka topic (required)")
-	receiveCmd.Flags().StringVar(&startFrom, "from", "earliest", "Start consuming from (start|latest)")
-	receiveCmd.Flags().StringVar(&receiveGroup, "group", "", "Group name (optional)")
+	ReceiveCmd.Flags().StringVar(&receiveKafkaServer, "server", "", "Kafka connection string (required)")
+	ReceiveCmd.Flags().StringVar(&receiveTopic, "channel", "", "Kafka topic (required)")
+	ReceiveCmd.Flags().StringVar(&startFrom, "from", "earliest", "Start consuming from (start|latest)")
+	ReceiveCmd.Flags().StringVar(&receiveGroup, "group", "", "Group name (optional)")
 
-	err := receiveCmd.MarkFlagRequired("server")
+	err := ReceiveCmd.MarkFlagRequired("server")
 	if err != nil {
 		log.Printf("failed to define flag: %s", receiveKafkaServer)
 	}
 
-	err = receiveCmd.MarkFlagRequired("channel")
+	err = ReceiveCmd.MarkFlagRequired("channel")
 	if err != nil {
 		log.Printf("failed to define flag: %s", receiveTopic)
 	}
