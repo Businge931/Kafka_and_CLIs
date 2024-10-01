@@ -8,9 +8,7 @@ import (
 
 type (
 	MessageProducer interface {
-		ProduceMessage(
-			ctx context.Context, 
-			message models.Message) error
+		ProduceMessage(ctx context.Context, message models.Message) error
 	}
 	MessageConsumer interface {
 		ConsumeMessages(ctx context.Context) ([]models.Message, error)
