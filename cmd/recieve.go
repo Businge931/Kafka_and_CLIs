@@ -1,13 +1,16 @@
 package cmd
 
 import (
-	"context"
-	"time"
+	// "context"
+	// "fmt"
+	// "os"
+
+	// "time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Businge931/Kafka_and_CLIs/kafka"
+	"github.com/Businge931/Kafka_and_CLIs/broker"
 	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
@@ -16,6 +19,7 @@ var (
 	receiveTopic  string
 	startFrom     string
 	receiveGroup  string
+	// testing       bool
 )
 
 // ReceiveCmd defines the Cobra command for consuming messages
@@ -24,7 +28,6 @@ var ReceiveCmd = &cobra.Command{
 	Short: "Receive messages from Kafka",
 	Run: func(_ *cobra.Command, _ []string) {
 		// Echo the parameters to the user
-		// Echo the parameters to the user
 		log.Printf("You are receiving from the channel: '%s'\n", receiveTopic)
 		log.Printf("You are receiving from the '%s'\n", startFrom)
 		log.Printf("You are receiving through the server: '%s'\n", receiveServer)
@@ -32,30 +35,30 @@ var ReceiveCmd = &cobra.Command{
 		if receiveGroup != "" {
 			log.Printf("You are part of the receiving group: '%s'\n", receiveGroup)
 		}
-		// Create a new Kafka consumer
-		consumer, err := kafka.NewConsumer(receiveServer, receiveGroup, startFrom)
-		if err != nil {
-			log.Fatalf("Failed to create Kafka consumer: %v", err)
-		}
-		defer consumer.Close()
-
-		// Initialize the service with the Kafka consumer
-		msgService := service.New(nil, consumer)
 
 		// Set up a context with a timeout for receiving messages
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+		// ctx, cancel := context.WithCancel(context.Background())
+		// defer cancel()
 
-		// Consume the messages via the service layer
-		messages, err := msgService.ReceiveMessages(ctx)
+		// Initialize Kafka consumer
+		kafkaConsumer, err := broker.NewKafkaConsumer(receiveServer, receiveGroup, startFrom)
 		if err != nil {
-			log.Fatalf("Failed to receive messages: %v", err)
+			log.Fatalf("Failed to create Kafka consumer: %s\n", err)
+
+		}
+		defer kafkaConsumer.Close()
+
+		// Initialize the generic consumer with Kafka-specific logic
+		genericConsumer := broker.NewConsumer(kafkaConsumer.ReadMessages, kafkaConsumer.Close)
+
+		// Initialize the service layer
+		svc := service.New(nil, genericConsumer)
+
+		// Receive messages using the service
+		if err := svc.ReceiveMessages(receiveTopic); err != nil {
+			log.Fatalf("Failed to receive messages using consumer: %s", err)
 		}
 
-		// Output the received messages
-		for i := range messages {
-			log.Printf("Received message from topic '%s': %s", messages[i].Channel, messages[i].Payload)
-		}
 	},
 }
 
