@@ -1,45 +1,83 @@
 package broker
 
-import (
-	"context"
+// "context"
 
-	"github.com/Businge931/Kafka_and_CLIs/models"
-)
+// "github.com/Businge931/Kafka_and_CLIs/models"
 
-// Producer is a generic struct that implements the MessageProducer interface.
+// These are generic structs that implements the MessageProducer interface.
 // It can work with any messaging broker (e.g., Kafka, RabbitMQ).
+
 type Producer struct {
-	produceMessageFunc func(ctx context.Context, message models.Message) error
+	produceMessageFunc func(topic, message string) error
+	closeFunc          func()
 }
 
-// NewProducer creates a new generic Producer instance.
+type Consumer struct {
+	consumeMessagesFunc func(topic string, ) error
+	closeFunc           func()
+}
+
+// The Producers create new generic Producer instances.
 // The broker-specific message production function is passed as a parameter.
-func NewProducer(produceFunc func(ctx context.Context, message models.Message) error) *Producer {
+
+func NewProducer(produceFunc func(topic, message string) error, closeFunc func()) *Producer {
 	return &Producer{
 		produceMessageFunc: produceFunc,
+		closeFunc:          closeFunc,
 	}
 }
 
-// ProduceMessage produces a message using the generic production function.
-func (p *Producer) ProduceMessage(ctx context.Context, message models.Message) error {
-	return p.produceMessageFunc(ctx, message)
+func (p *Producer) SendMessage(topic, message string) error {
+	return p.produceMessageFunc(topic, message)
+}
+func (p *Producer) Close() {
+	p.closeFunc()
 }
 
-// Consumer is a generic struct that implements the MessageConsumer interface.
-// It can work with any messaging broker (e.g., Kafka, RabbitMQ).
-type Consumer struct {
-	consumeMessagesFunc func(ctx context.Context) ([]models.Message, error)
-}
-
-// NewConsumer creates a new generic Consumer instance.
-// The broker-specific message consumption function is passed as a parameter.
-func NewConsumer(consumeFunc func(ctx context.Context) ([]models.Message, error)) *Consumer {
+func NewConsumer(consumeFunc func(topic string) error, closeFunc func()) *Consumer {
 	return &Consumer{
 		consumeMessagesFunc: consumeFunc,
+		closeFunc:           closeFunc,
 	}
 }
 
-// ConsumeMessages consumes messages using the generic consumption function.
-func (c *Consumer) ConsumeMessages(ctx context.Context) ([]models.Message, error) {
-	return c.consumeMessagesFunc(ctx)
+func (c *Consumer) ReadMessages(topic string, ) error {
+	return c.consumeMessagesFunc(topic)
 }
+
+func (p *Consumer) Close() {
+	p.closeFunc()
+}
+
+//////*************************************************************
+
+// type Producer struct {
+// 	produceMessageFunc func(ctx context.Context, message models.Message) error
+// }
+
+// type Consumer struct {
+// 	consumeMessagesFunc func(ctx context.Context) (message string,err error)
+// }
+
+// // The Producers create new generic Producer instances.
+// // The broker-specific message production function is passed as a parameter.
+
+// func NewProducer(produceFunc func(ctx context.Context, message models.Message) error) *Producer {
+// 	return &Producer{
+// 		produceMessageFunc: produceFunc,
+// 	}
+// }
+
+// func (p *Producer) ProduceMessage(ctx context.Context, message models.Message) error {
+// 	return p.produceMessageFunc(ctx, message)
+// }
+
+// func NewConsumer(consumeFunc func(ctx context.Context) (message string,err error)) *Consumer {
+// 	return &Consumer{
+// 		consumeMessagesFunc: consumeFunc,
+// 	}
+// }
+
+// func (c *Consumer) ConsumeMessages(ctx context.Context) (message string,err error) {
+// 	return c.consumeMessagesFunc(ctx)
+// }
