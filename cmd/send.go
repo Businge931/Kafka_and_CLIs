@@ -1,14 +1,15 @@
 package cmd
 
 import (
-	"context"
-	"time"
+	"bufio"
+	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Businge931/Kafka_and_CLIs/kafka"
-	"github.com/Businge931/Kafka_and_CLIs/models"
+	"github.com/Businge931/Kafka_and_CLIs/broker"
+	// "github.com/Businge931/Kafka_and_CLIs/models"
 	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
@@ -16,8 +17,7 @@ var (
 	sendKafkaServer string
 	sendTopic       string
 	sendGroup       string
-	payload         string
-	metadata        map[string]string
+	// metadata        map[string]string
 )
 
 var SendCmd = &cobra.Command{
@@ -31,34 +31,47 @@ var SendCmd = &cobra.Command{
 		if sendGroup != "" {
 			log.Printf("You are sending through the group: '%s'\n", sendGroup)
 		}
-		// Create a new Kafka producer
-		producer, err := kafka.NewProducer(sendKafkaServer)
-		if err != nil {
-			log.Fatalf("Failed to create Kafka producer: %v", err)
-		}
-		defer producer.Close()
 
-		// Initialize the service with the Kafka producer
-		msgService := service.New(producer, nil)
+		// Create a new Kafka producer
+		kafkaProducer, err := broker.NewKafkaProducer(sendKafkaServer)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create Kafka producer: %v\n", err)
+			os.Exit(1)
+		}
+		defer kafkaProducer.Close()
+
+		// Initialize the generic producer with Kafka-specific logic
+		genericProducer := broker.NewProducer(kafkaProducer.SendMessage, kafkaProducer.Close)
 
 		// Create a message based on input flags
-		message := models.Message{
-			Channel:  sendTopic,
-			Server:   sendKafkaServer,
-			Group:    sendGroup,
-			Payload:  payload,
-			Metadata: metadata,
+		// message := models.Message{
+		// 	Channel:  sendTopic,
+		// 	Server:   sendKafkaServer,
+		// 	Group:    sendGroup,
+		// 	Payload:  payload,
+		// 	Metadata: metadata,
+		// }
+
+		// Initialize the service layer
+		svc := service.New(genericProducer, nil)
+
+		// Capture user input and send messages using the service
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			fmt.Print("Enter message (or 'q' to quit): ")
+			message, _ := reader.ReadString('\n')
+
+			// Remove newline and quit if the user types 'q'
+			message = message[:len(message)-1]
+			if message == "q" {
+				break
+			}
+			// Send the message using the service
+			if err := svc.SendMessage(sendTopic, message); err != nil {
+				log.Fatalf("Failed to send message using producer: %v", err)
+			}
 		}
 
-		// Send the message through the service layer
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		if err := msgService.SendMessage(ctx, message); err != nil {
-			log.Fatalf("Failed to start kafka producer: %v", err)
-		}
-
-		log.Println("Message sent successfully.")
 	},
 }
 
