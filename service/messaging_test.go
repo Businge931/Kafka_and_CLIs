@@ -3,12 +3,12 @@ package service_test
 import (
 	"testing"
 
-	"github.com/Businge931/Kafka_and_CLIs/models"
-	mock_service "github.com/Businge931/Kafka_and_CLIs/service/mock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"github.com/Businge931/Kafka_and_CLIs/models"
 	"github.com/Businge931/Kafka_and_CLIs/service"
+	mock_service "github.com/Businge931/Kafka_and_CLIs/service/mock"
 )
 
 func TestService_SendMessage(t *testing.T) {
@@ -40,7 +40,7 @@ func TestService_SendMessage(t *testing.T) {
 				topic:   "",
 				message: "hello world",
 			},
-			before:      func(producer *mock_service.MockMessageProducer) {},
+			before:      func(_ *mock_service.MockMessageProducer) {},
 			expectedErr: models.ErrEmptyTopic,
 		},
 		{
@@ -49,7 +49,7 @@ func TestService_SendMessage(t *testing.T) {
 				topic:   "myTopic",
 				message: "",
 			},
-			before:      func(producer *mock_service.MockMessageProducer) {},
+			before:      func(_ *mock_service.MockMessageProducer) {},
 			expectedErr: models.ErrEmptyMessage,
 		},
 		{
@@ -111,7 +111,7 @@ func TestService_ReceiveMessages(t *testing.T) {
 			args: args{
 				topic: "",
 			},
-			before:      func(consumer *mock_service.MockMessageConsumer) {},
+			before:      func(_ *mock_service.MockMessageConsumer) {},
 			expectedErr: models.ErrEmptyTopic,
 		},
 		{
@@ -122,7 +122,7 @@ func TestService_ReceiveMessages(t *testing.T) {
 			before: func(consumer *mock_service.MockMessageConsumer) {
 				consumer.EXPECT().ReadMessages("myTopic").Return(models.ErrReadFail)
 			},
-			expectedErr:models.ErrReceiveMessageFromTopic ,
+			expectedErr: models.ErrReceiveMessageFromTopic,
 		},
 	}
 
@@ -134,7 +134,7 @@ func TestService_ReceiveMessages(t *testing.T) {
 			mockConsumer := mock_service.NewMockMessageConsumer(ctrl)
 			tt.before(mockConsumer)
 
-			svc := service.New(nil, mockConsumer) 
+			svc := service.New(nil, mockConsumer)
 			err := svc.ReceiveMessages(tt.args.topic)
 
 			if tt.expectedErr != nil {

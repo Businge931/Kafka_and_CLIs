@@ -101,5 +101,6 @@ func (kp *KafkaProducer) sendWithDeliveryReport(topic, message string) error {
 	}
 
 	log.Printf("Message delivered to %v\n", msg.TopicPartition)
+
 	return nil
 }
