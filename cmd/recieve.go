@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	// "context"
-	// "fmt"
-	// "os"
-
-	// "time"
+	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -19,7 +16,7 @@ var (
 	receiveTopic  string
 	startFrom     string
 	receiveGroup  string
-	// testing       bool
+	dynamicGroup  bool
 )
 
 // ReceiveCmd defines the Cobra command for consuming messages
@@ -36,12 +33,15 @@ var ReceiveCmd = &cobra.Command{
 			log.Printf("You are part of the receiving group: '%s'\n", receiveGroup)
 		}
 
-		// Set up a context with a timeout for receiving messages
-		// ctx, cancel := context.WithCancel(context.Background())
-		// defer cancel()
+		// Check for dynamic group flag
+		if dynamicGroup {
+			// Create a unique consumer group name if dynamicGroup is true
+			receiveGroup = fmt.Sprintf("%s-%d", receiveGroup, time.Now().UnixNano())
+			log.Printf("Dynamic group created: '%s'\n", receiveGroup)
+		}
 
 		// Initialize Kafka consumer
-		kafkaConsumer, err := broker.NewKafkaConsumer(receiveServer, receiveGroup, startFrom)
+		kafkaConsumer, err := broker.NewKafkaConsumer(receiveServer, receiveGroup, startFrom, dynamicGroup)
 		if err != nil {
 			log.Fatalf("Failed to create Kafka consumer: %s\n", err)
 
@@ -71,6 +71,7 @@ func SetupReceiveCmd() {
 	ReceiveCmd.Flags().StringVar(&receiveTopic, "channel", "", "Kafka topic (required)")
 	ReceiveCmd.Flags().StringVar(&startFrom, "from", "earliest", "Start consuming from (start|latest)")
 	ReceiveCmd.Flags().StringVar(&receiveGroup, "group", "", "Group name (optional)")
+	ReceiveCmd.Flags().BoolVar(&dynamicGroup, "dynamic-group", false, "Use dynamic group (optional)")
 
 	err := ReceiveCmd.MarkFlagRequired("server")
 	if err != nil {
