@@ -2,8 +2,8 @@ package broker
 
 import (
 	"fmt"
+	"time"
 
-	// "github.com/Businge931/Kafka_and_CLIs/models"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,8 +13,15 @@ type KafkaConsumer struct {
 }
 
 // NewKafkaConsumer creates a new KafkaConsumer
-func NewKafkaConsumer(kafkaServer, group, startFrom string) (*KafkaConsumer, error) {
+func NewKafkaConsumer(kafkaServer, groupPrefix, startFrom string, dynamicGroup bool) (*KafkaConsumer, error) {
 	config := configureConsumerOptions(startFrom)
+
+	// Dynamically create unique group ID if dynamicGroup is true
+	group := groupPrefix
+	if dynamicGroup {
+		group = fmt.Sprintf("%s-%d", groupPrefix, time.Now().UnixNano()) // Unique group ID
+	}
+
 	consumer, err := createConsumer(kafkaServer, group, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create consumer: %s", err)
@@ -59,7 +66,7 @@ func createConsumer(kafkaServer, group string, config kafka.ConfigMap) (*kafka.C
 
 func readMessages(consumer *kafka.Consumer) error {
 	for {
-		msg, err := consumer.ReadMessage(-1)
+		msg, err := consumer.ReadMessage(-1) // The parameter -1 specifies that the method should block the process and wait for a message indefinitely until a message is received.
 		if err == nil {
 			log.Printf("Received message: %s\n", string(msg.Value))
 		} else {
