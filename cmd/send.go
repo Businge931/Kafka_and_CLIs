@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Businge931/Kafka_and_CLIs/broker"
-	// "github.com/Businge931/Kafka_and_CLIs/models"
 	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
@@ -17,7 +16,6 @@ var (
 	sendKafkaServer string
 	sendTopic       string
 	sendGroup       string
-	// metadata        map[string]string
 )
 
 var SendCmd = &cobra.Command{
@@ -42,15 +40,6 @@ var SendCmd = &cobra.Command{
 
 		// Initialize the generic producer with Kafka-specific logic
 		genericProducer := broker.NewProducer(kafkaProducer.SendMessage, kafkaProducer.Close)
-
-		// Create a message based on input flags
-		// message := models.Message{
-		// 	Channel:  sendTopic,
-		// 	Server:   sendKafkaServer,
-		// 	Group:    sendGroup,
-		// 	Payload:  payload,
-		// 	Metadata: metadata,
-		// }
 
 		// Initialize the service layer
 		svc := service.New(genericProducer, nil)
