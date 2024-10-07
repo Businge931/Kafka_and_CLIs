@@ -39,8 +39,8 @@ func (c *Consumer) ReadMessages(topic string) error {
 	return c.consumeMessagesFunc(topic)
 }
 
-func (p *Consumer) Close() {
-	p.closeFunc()
+func (c *Consumer) Close() {
+	c.closeFunc()
 }
 
 //////*************************************************************

@@ -44,7 +44,6 @@ var ReceiveCmd = &cobra.Command{
 		kafkaConsumer, err := broker.NewKafkaConsumer(receiveServer, receiveGroup, startFrom, dynamicGroup)
 		if err != nil {
 			log.Fatalf("Failed to create Kafka consumer: %s\n", err)
-
 		}
 		defer kafkaConsumer.Close()
 
@@ -58,7 +57,6 @@ var ReceiveCmd = &cobra.Command{
 		if err := svc.ReceiveMessages(receiveTopic); err != nil {
 			log.Fatalf("Failed to receive messages using consumer: %s", err)
 		}
-
 	},
 }
 
@@ -82,5 +80,4 @@ func SetupReceiveCmd() {
 	if err != nil {
 		log.Printf("failed to define flag: %s", receiveTopic)
 	}
-
 }

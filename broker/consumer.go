@@ -6,6 +6,8 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Businge931/Kafka_and_CLIs/models"
 )
 
 type KafkaConsumer struct {
@@ -24,7 +26,7 @@ func NewKafkaConsumer(kafkaServer, groupPrefix, startFrom string, dynamicGroup b
 
 	consumer, err := createConsumer(kafkaServer, group, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create consumer: %s", err)
+		return nil, fmt.Errorf("%w: %w", models.ErrCreateConsumer, err)
 	}
 
 	return &KafkaConsumer{consumer: consumer}, nil
@@ -33,11 +35,12 @@ func NewKafkaConsumer(kafkaServer, groupPrefix, startFrom string, dynamicGroup b
 // ReadMessages reads messages from the Kafka topic
 func (kc *KafkaConsumer) ReadMessages(topic string) error {
 	if err := kc.consumer.SubscribeTopics([]string{topic}, nil); err != nil {
-		return fmt.Errorf("failed to subscribe to topic: %s", err)
+		return fmt.Errorf("%w: %w", models.ErrSubscribeTopic, err)
 	}
 
 	log.Println("Waiting for messages...")
 	log.Println("Subscribed to topic:", topic)
+
 	return readMessages(kc.consumer)
 }
 
@@ -52,6 +55,7 @@ func configureConsumerOptions(startFrom string) kafka.ConfigMap {
 	if startFrom == "latest" {
 		offsetReset = "latest"
 	}
+
 	return kafka.ConfigMap{"auto.offset.reset": offsetReset}
 }
 
@@ -66,11 +70,12 @@ func createConsumer(kafkaServer, group string, config kafka.ConfigMap) (*kafka.C
 
 func readMessages(consumer *kafka.Consumer) error {
 	for {
-		msg, err := consumer.ReadMessage(-1) // The parameter -1 specifies that the method should block the process and wait for a message indefinitely until a message is received.
+		// The parameter -1 specifies that the method should block the process and wait for a message indefinitely until a message is received.
+		msg, err := consumer.ReadMessage(-1)
 		if err == nil {
 			log.Printf("Received message: %s\n", string(msg.Value))
 		} else {
-			return fmt.Errorf("consumer error: %v", err)
+			return fmt.Errorf("%w: %w", models.ErrConsumer, err)
 		}
 	}
 }

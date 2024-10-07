@@ -1,11 +1,13 @@
 package broker
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Businge931/Kafka_and_CLIs/models"
 )
 
 type KafkaProducer struct {
@@ -20,6 +22,7 @@ func NewKafkaProducer(kafkaServer string) (*KafkaProducer, error) {
 
 	kp := &KafkaProducer{producer: producer}
 	kp.startDeliveryReportHandler()
+
 	return kp, nil
 }
 
@@ -38,25 +41,18 @@ func (kp *KafkaProducer) startDeliveryReportHandler() {
 	}()
 }
 
-// // SendMessage sends a message to the Kafka topic
-// func (kp *KafkaProducer) SendMessage(topic, message string) error {
-// 	return kp.producer.Produce(&kafka.Message{
-// 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-// 		Value:          []byte(message),
-// 	}, nil)
-// }
-
 // SendMessage sends a message to the Kafka topic with retries
 func (kp *KafkaProducer) SendMessage(topic, message string) error {
-	const maxRetries = 5          // Maximum number of retries
-	const baseRetryDelay = 500    // Initial delay in milliseconds
+	const maxRetries = 5
+	const baseRetryDelay = 500
 
 	var lastError error
-	for attempt := 0; attempt < maxRetries; attempt++ {
+
+	for attempt := range [maxRetries]int{} {
 		// Attempt to send the message
 		err := kp.sendWithDeliveryReport(topic, message)
 		if err == nil {
-			return nil // Message sent successfully, no need to retry
+			return nil
 		}
 
 		// Log the failure and retry
@@ -67,7 +63,7 @@ func (kp *KafkaProducer) SendMessage(topic, message string) error {
 		time.Sleep(time.Duration(baseRetryDelay*(1<<attempt)) * time.Millisecond)
 	}
 
-	return errors.New("failed to send message after max retries: " + lastError.Error())
+	return fmt.Errorf("%w: %w", models.ErrMaxRetry, lastError)
 }
 
 // Close flushes and closes the producer
@@ -75,7 +71,6 @@ func (kp *KafkaProducer) Close() {
 	kp.producer.Flush(15 * 1000)
 	kp.producer.Close()
 }
-
 
 // sendWithDeliveryReport is a helper that sends the message and checks for delivery report errors
 func (kp *KafkaProducer) sendWithDeliveryReport(topic, message string) error {
@@ -85,14 +80,18 @@ func (kp *KafkaProducer) sendWithDeliveryReport(topic, message string) error {
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          []byte(message),
 	}, deliveryChan)
-
 	if err != nil {
 		return err
 	}
 
 	// Wait for delivery report
 	e := <-deliveryChan
-	msg := e.(*kafka.Message)
+
+	msg, ok := e.(*kafka.Message)
+	if !ok {
+		close(deliveryChan)
+		return fmt.Errorf("%w: %T", models.ErrEventType, e)
+	}
 
 	close(deliveryChan)
 

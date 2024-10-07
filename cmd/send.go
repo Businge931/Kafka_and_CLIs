@@ -47,7 +47,7 @@ var SendCmd = &cobra.Command{
 		// Capture user input and send messages using the service
 		reader := bufio.NewReader(os.Stdin)
 		for {
-			fmt.Print("Enter message (or 'q' to quit): ")
+			log.Print("Enter message (or 'q' to quit): ")
 			message, _ := reader.ReadString('\n')
 
 			// Remove newline and quit if the user types 'q'
@@ -60,7 +60,6 @@ var SendCmd = &cobra.Command{
 				log.Fatalf("Failed to send message using producer: %v", err)
 			}
 		}
-
 	},
 }
 
