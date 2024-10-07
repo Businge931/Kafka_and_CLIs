@@ -1,9 +1,5 @@
 package broker
 
-// "context"
-
-// "github.com/Businge931/Kafka_and_CLIs/models"
-
 // These are generic structs that implements the MessageProducer interface.
 // It can work with any messaging broker (e.g., Kafka, RabbitMQ).
 
@@ -13,12 +9,9 @@ type Producer struct {
 }
 
 type Consumer struct {
-	consumeMessagesFunc func(topic string, ) error
+	consumeMessagesFunc func(topic string) error
 	closeFunc           func()
 }
-
-// The Producers create new generic Producer instances.
-// The broker-specific message production function is passed as a parameter.
 
 func NewProducer(produceFunc func(topic, message string) error, closeFunc func()) *Producer {
 	return &Producer{
@@ -30,6 +23,7 @@ func NewProducer(produceFunc func(topic, message string) error, closeFunc func()
 func (p *Producer) SendMessage(topic, message string) error {
 	return p.produceMessageFunc(topic, message)
 }
+
 func (p *Producer) Close() {
 	p.closeFunc()
 }
@@ -41,7 +35,7 @@ func NewConsumer(consumeFunc func(topic string) error, closeFunc func()) *Consum
 	}
 }
 
-func (c *Consumer) ReadMessages(topic string, ) error {
+func (c *Consumer) ReadMessages(topic string) error {
 	return c.consumeMessagesFunc(topic)
 }
 
