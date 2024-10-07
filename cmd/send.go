@@ -57,7 +57,7 @@ var SendCmd = &cobra.Command{
 			}
 			// Send the message using the service
 			if err := svc.SendMessage(sendTopic, message); err != nil {
-				log.Fatalf("Failed to send message using producer: %v", err)
+				log.Errorf("Failed to send message using producer: %v", err)
 			}
 		}
 	},
