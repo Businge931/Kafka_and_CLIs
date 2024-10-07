@@ -4,6 +4,10 @@ GOBIN = $(GOBASE)/build/bin
 LINT_PATH = $(GOBASE)/build/lint
 TEST_PATH = $(GOBASE)/scraper
 
+###  mockgen -source=producer/producer.go -destination=producer/mocks/mock_producer.go -package=mocks
+
+####  mockgen -source=consumer/consumer.go -destination=consumer/mocks/mock_consumer.go -package=mocks
+
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -13,10 +17,26 @@ deps: ## Fetch required dependencies
 	go mod download
 
 send: ## Start producer instance to send messages
-	go run main.go send --channel jim-test --server localhost:9092 --group tests
+	go run main.go send --channel kafka-project --server localhost:9092
 
 receive: ## Start consumer instance to receive messages
-	go run main.go receive --channel jim-test --from start --server localhost:9092 --group tests
+	go run main.go receive --channel kafka-project --from start --server localhost:9092 --group tests
+
+
+# # # # FOR THE COMMANDS BELOW, ENSURE TO BE IN THR KAFKA DIRECTORY
+
+partition: ## edit the number of partitions in a topic to 4
+	bin/kafka-topics.sh --alter --topic jim-test --partitions 4 --bootstrap-server localhost:9092
+
+describe-topic: ##see details about a topic
+	bin/kafka-topics.sh --describe --topic kafka-project --bootstrap-server localhost:9092
+
+verify-consumer-assignment:
+	bin/kafka-consumer-groups.sh --describe --group tests --bootstrap-server localhost:9092
+
+check-kafka-log:
+	tail -f logs/server.log
+
 
 run: build ## Build and run program
 	$(GOBIN)/$(APP)
