@@ -15,7 +15,7 @@ type KafkaConsumer struct {
 }
 
 // NewKafkaConsumer creates a new KafkaConsumer
-func NewKafkaConsumer(kafkaServer, groupPrefix, startFrom string, dynamicGroup bool) (*KafkaConsumer, error) {
+func NewConsumer(kafkaServer, groupPrefix, startFrom string, dynamicGroup bool) (*KafkaConsumer, error) {
 	config := configureConsumerOptions(startFrom)
 
 	// Dynamically create unique group ID if dynamicGroup is true
