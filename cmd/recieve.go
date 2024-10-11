@@ -7,16 +7,16 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Businge931/Kafka_and_CLIs/broker"
 	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
 var (
-	receiveServer string
-	receiveTopic  string
-	startFrom     string
-	receiveGroup  string
-	dynamicGroup  bool
+	receiveServer  string
+	receiveTopic   string
+	startFrom      string
+	receiveGroup   string
+	dynamicGroup   bool
+	messageService service.MessageService
 )
 
 // ReceiveCmd defines the Cobra command for consuming messages
@@ -40,28 +40,18 @@ var ReceiveCmd = &cobra.Command{
 			log.Printf("Dynamic group created: '%s'\n", receiveGroup)
 		}
 
-		// Initialize Kafka consumer
-		kafkaConsumer, err := broker.NewKafkaConsumer(receiveServer, receiveGroup, startFrom, dynamicGroup)
-		if err != nil {
-			log.Fatalf("Failed to create Kafka consumer: %s\n", err)
+		// Use the injected service to receive messages
+		if err := messageService.ReadMessages(receiveTopic); err != nil {
+			log.Fatalf("Failed to receive messages: %s", err)
 		}
-		defer kafkaConsumer.Close()
 
-		// Initialize the generic consumer with Kafka-specific logic
-		genericConsumer := broker.NewConsumer(kafkaConsumer.ReadMessages, kafkaConsumer.Close)
-
-		// Initialize the service layer
-		svc := service.New(nil, genericConsumer)
-
-		// Receive messages using the service
-		if err := svc.ReceiveMessages(receiveTopic); err != nil {
-			log.Fatalf("Failed to receive messages using consumer: %s", err)
-		}
 	},
 }
 
 // SetupReceiveCmd sets up the flags and adds the command to the root
-func SetupReceiveCmd() {
+func SetupReceiveCmd(svc service.MessageService) {
+	messageService = svc
+
 	rootCmd.AddCommand(ReceiveCmd)
 
 	// Define flags for the receive command

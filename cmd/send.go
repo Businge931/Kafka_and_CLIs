@@ -1,14 +1,9 @@
 package cmd
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/Businge931/Kafka_and_CLIs/broker"
 	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
@@ -16,6 +11,8 @@ var (
 	sendKafkaServer string
 	sendTopic       string
 	sendGroup       string
+	// sendService will hold the reference to the injected MessageService.
+	sendService service.MessageService
 )
 
 var SendCmd = &cobra.Command{
@@ -30,40 +27,14 @@ var SendCmd = &cobra.Command{
 			log.Printf("You are sending through the group: '%s'\n", sendGroup)
 		}
 
-		// Create a new Kafka producer
-		kafkaProducer, err := broker.NewKafkaProducer(sendKafkaServer)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to create Kafka producer: %v\n", err)
-			os.Exit(1)
-		}
-		defer kafkaProducer.Close()
-
-		// Initialize the generic producer with Kafka-specific logic
-		genericProducer := broker.NewProducer(kafkaProducer.SendMessage, kafkaProducer.Close)
-
-		// Initialize the service layer
-		svc := service.New(genericProducer, nil)
-
-		// Capture user input and send messages using the service
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			log.Print("Enter message (or 'q' to quit): ")
-			message, _ := reader.ReadString('\n')
-
-			// Remove newline and quit if the user types 'q'
-			message = message[:len(message)-1]
-			if message == "q" {
-				break
-			}
-			// Send the message using the service
-			if err := svc.SendMessage(sendTopic, message); err != nil {
-				log.Errorf("Failed to send message using producer: %v", err)
-			}
-		}
+		// Delegate message sending to the injected service
+		service.SendHandler(sendService, sendTopic)
 	},
 }
 
-func SetupSendCmd() {
+func SetupSendCmd(svc service.MessageService) {
+	sendService = svc // Inject the MessageService instance
+
 	rootCmd.AddCommand(SendCmd)
 
 	// Define flags for the send command
