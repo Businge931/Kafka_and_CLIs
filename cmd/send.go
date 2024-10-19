@@ -1,54 +1,72 @@
 package cmd
 
 import (
+	"bufio"
+	"os"
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
-var (
+type sendConfig struct {
 	sendKafkaServer string
 	sendTopic       string
 	sendGroup       string
-	// sendService will hold the reference to the injected MessageService.
-	sendService service.MessageService
-)
-
-var SendCmd = &cobra.Command{
-	Use:   "send",
-	Short: "Send messages to Kafka",
-	Run: func(_ *cobra.Command, _ []string) {
-		// Echo the parameters to the user
-		log.Printf("You have decided to send to the channel: '%s'\n", sendTopic)
-		log.Printf("You are sending through the server: '%s'\n", sendKafkaServer)
-
-		if sendGroup != "" {
-			log.Printf("You are sending through the group: '%s'\n", sendGroup)
-		}
-
-		// Delegate message sending to the injected service
-		service.SendHandler(sendService, sendTopic)
-	},
 }
 
-func SetupSendCmd(svc service.MessageService) {
-	sendService = svc // Inject the MessageService instance
+func (cbr *CobraCommander) SetupSendCmd() {
+	sendCmd := &cobra.Command{
+		Use:   "send",
+		Short: "Send messages to Kafka",
+		Run: func(_ *cobra.Command, _ []string) {
+			// Echo the parameters to the user
+			log.Printf("You have decided to send to the channel: '%s'\n", cbr.sendCfg.sendTopic)
+			log.Printf("You are sending through the server: '%s'\n", cbr.sendCfg.sendKafkaServer)
 
-	rootCmd.AddCommand(SendCmd)
+			if cbr.sendCfg.sendGroup != "" {
+				log.Printf("You are sending through the group: '%s'\n", cbr.sendCfg.sendGroup)
+			}
 
-	// Define flags for the send command
-	SendCmd.Flags().StringVar(&sendKafkaServer, "server", "", "Kafka connection string (required)")
-	SendCmd.Flags().StringVar(&sendTopic, "channel", "", "Kafka topic (required)")
-	SendCmd.Flags().StringVar(&sendGroup, "group", "", "Group name (optional)")
-
-	err := SendCmd.MarkFlagRequired("server")
-	if err != nil {
-		log.Printf("failed to define flag: %s", sendKafkaServer)
+			cbr.SendMessage(cbr.sendCfg.sendTopic)
+		},
 	}
 
-	err = SendCmd.MarkFlagRequired("channel")
+	cbr.rootCmd.AddCommand(sendCmd)
+
+	// Define flags for the send command
+	sendCmd.Flags().StringVar(&cbr.sendCfg.sendKafkaServer, "server", "", "Kafka connection string (required)")
+	sendCmd.Flags().StringVar(&cbr.sendCfg.sendTopic, "channel", "", "Kafka topic (required)")
+	sendCmd.Flags().StringVar(&cbr.sendCfg.sendGroup, "group", "", "Group name (optional)")
+
+	err := sendCmd.MarkFlagRequired("server")
 	if err != nil {
-		log.Printf("failed to define flag: %s", sendTopic)
+		log.Printf("failed to define flag: %s", cbr.sendCfg.sendKafkaServer)
+	}
+
+	err = sendCmd.MarkFlagRequired("channel")
+	if err != nil {
+		log.Printf("failed to define flag: %s", cbr.sendCfg.sendTopic)
+	}
+}
+
+// SendMessage sends messages using the provided Service.
+func (cbr *CobraCommander) SendMessage(topic string) {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		log.Print("Enter message (or 'q' to quit): ")
+		message, _ := reader.ReadString('\n')
+
+		// Remove the newline character
+		message = strings.TrimSpace(message)
+		if message == "q" {
+			break
+		}
+
+		// Send the message using the service
+		if err := cbr.sendService.SendMessage(topic, message); err != nil {
+			log.Errorf("Failed to send message: %v", err)
+		}
 	}
 }

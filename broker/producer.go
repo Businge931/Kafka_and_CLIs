@@ -2,7 +2,6 @@ package broker
 
 import (
 	"fmt"
-	// "time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	log "github.com/sirupsen/logrus"

@@ -1,10 +1,7 @@
 package service
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,9 +9,9 @@ import (
 	"github.com/Businge931/Kafka_and_CLIs/models"
 )
 
-func (svc *Service) SendMessage(topic, message string) error {
-	const maxRetries = 5
+const maxRetries = 5
 
+func (svc *Service) SendMessage(topic, message string) error {
 	if topic == "" {
 		log.Error(models.ErrEmptyTopic)
 		return models.ErrEmptyTopic
@@ -26,7 +23,8 @@ func (svc *Service) SendMessage(topic, message string) error {
 	}
 
 	var lastError error
-	for attempt := 0; attempt < maxRetries; attempt++ {
+
+	for attempt := range maxRetries {
 		err := svc.producer.SendMessage(topic, message)
 		if err == nil {
 			return nil
@@ -37,7 +35,7 @@ func (svc *Service) SendMessage(topic, message string) error {
 		time.Sleep(time.Duration(500*(1<<attempt)) * time.Millisecond) // Exponential backoff
 	}
 
-	return fmt.Errorf("%w: %v", models.ErrMaxRetry, lastError)
+	return fmt.Errorf("%w: %w", models.ErrMaxRetry, lastError)
 }
 
 func (svc *Service) ReadMessages(topic string) error {
@@ -53,25 +51,4 @@ func (svc *Service) ReadMessages(topic string) error {
 	}
 
 	return nil
-}
-
-// SendHandler sends messages using the provided Service.
-func SendHandler(svc MessageService, topic string) {
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		log.Print("Enter message (or 'q' to quit): ")
-		message, _ := reader.ReadString('\n')
-
-		// Remove the newline character
-		message = strings.TrimSpace(message)
-		if message == "q" {
-			break
-		}
-
-		// Send the message using the service
-		if err := svc.SendMessage(topic, message); err != nil {
-			log.Errorf("Failed to send message: %v", err)
-		}
-	}
 }

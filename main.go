@@ -19,12 +19,13 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Warn("No .env file found or failed to load")
 	}
+
 	kafkaServer := os.Getenv("KAFKA_SERVER")
 	if kafkaServer == "" {
 		log.Fatal("KAFKA_SERVER environment variable is not set")
-	} else {
-		log.Infof("Kafka server address: %s", kafkaServer) 
 	}
+
+	log.Infof("Kafka server address: %s", kafkaServer)
 
 	// Initialize the Kafka producer
 	kafkaProducer, err := broker.NewProducer(kafkaServer)
@@ -36,17 +37,17 @@ func main() {
 	// Initialize the Kafka consumer
 	kafkaConsumer, err := broker.NewConsumer(kafkaServer, "tests", "earliest", false)
 	if err != nil {
-		log.Fatalf("Failed to create Kafka consumer: %v", err)
+		log.WithError(err).Error("Failed to create Kafka consumer")
 	}
 	defer kafkaConsumer.Close()
 
 	// Wrap the Kafka producer in a generic service layer
-	messageService := service.NewMessageService(kafkaProducer, kafkaConsumer)
+	messageService := service.New(kafkaProducer, kafkaConsumer)
 
-	// Call the setup functions to initialize commands
-	cmd.SetupSendCmd(messageService)
-	cmd.SetupReceiveCmd(messageService)
-	cmd.SetupRootCmd()
+	cmd := cmd.NewCobraCommander(messageService, messageService)
+
+	cmd.SetupSendCmd()
+	cmd.SetupReceiveCmd()
 
 	// Execute the root command
 	cmd.Execute()

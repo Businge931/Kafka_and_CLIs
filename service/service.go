@@ -22,18 +22,9 @@ type (
 	}
 )
 
-// Ensure `Service` implements the `MessageService` interface.
-var _ MessageService = (*Service)(nil)
-
 func New(producer MessageProducer, consumer MessageConsumer) *Service {
 	return &Service{
 		producer: producer,
 		consumer: consumer,
 	}
-}
-
-// NewMessageService creates and returns a `MessageService` interface.
-// This version abstracts the underlying implementation to promote dependency injection.
-func NewMessageService(producer MessageProducer, consumer MessageConsumer) MessageService {
-	return New(producer, consumer)
 }

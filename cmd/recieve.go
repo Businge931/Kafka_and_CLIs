@@ -6,68 +6,62 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/Businge931/Kafka_and_CLIs/service"
 )
 
-var (
-	receiveServer  string
-	receiveTopic   string
-	startFrom      string
-	receiveGroup   string
-	dynamicGroup   bool
-	messageService service.MessageService
-)
-
-// ReceiveCmd defines the Cobra command for consuming messages
-var ReceiveCmd = &cobra.Command{
-	Use:   "receive",
-	Short: "Receive messages from Kafka",
-	Run: func(_ *cobra.Command, _ []string) {
-		// Echo the parameters to the user
-		log.Printf("You are receiving from the channel: '%s'\n", receiveTopic)
-		log.Printf("You are receiving from the '%s'\n", startFrom)
-		log.Printf("You are receiving through the server: '%s'\n", receiveServer)
-
-		if receiveGroup != "" {
-			log.Printf("You are part of the receiving group: '%s'\n", receiveGroup)
-		}
-
-		// Check for dynamic group flag
-		if dynamicGroup {
-			// Create a unique consumer group name if dynamicGroup is true
-			receiveGroup = fmt.Sprintf("%s-%d", receiveGroup, time.Now().UnixNano())
-			log.Printf("Dynamic group created: '%s'\n", receiveGroup)
-		}
-
-		// Use the injected service to receive messages
-		if err := messageService.ReadMessages(receiveTopic); err != nil {
-			log.Fatalf("Failed to receive messages: %s", err)
-		}
-
-	},
+type receiveConfig struct {
+	receiveServer string
+	receiveTopic  string
+	startFrom     string
+	receiveGroup  string
+	dynamicGroup  bool
 }
 
 // SetupReceiveCmd sets up the flags and adds the command to the root
-func SetupReceiveCmd(svc service.MessageService) {
-	messageService = svc
+func (cbr *CobraCommander) SetupReceiveCmd() {
+	// receiveCmd defines the Cobra command for consuming messages
+	receiveCmd := &cobra.Command{
+		Use:   "receive",
+		Short: "Receive messages from Kafka",
+		Run: func(_ *cobra.Command, _ []string) {
+			// Echo the parameters to the user
+			log.Printf("You are receiving from the channel: '%s'\n", cbr.receiveCfg.receiveTopic)
+			log.Printf("You are receiving from the '%s'\n", cbr.receiveCfg.startFrom)
+			log.Printf("You are receiving through the server: '%s'\n", cbr.receiveCfg.receiveServer)
 
-	rootCmd.AddCommand(ReceiveCmd)
+			if cbr.receiveCfg.receiveGroup != "" {
+				log.Printf("You are part of the receiving group: '%s'\n", cbr.receiveCfg.receiveGroup)
+			}
 
-	// Define flags for the receive command
-	ReceiveCmd.Flags().StringVar(&receiveServer, "server", "", "Kafka connection string (required)")
-	ReceiveCmd.Flags().StringVar(&receiveTopic, "channel", "", "Kafka topic (required)")
-	ReceiveCmd.Flags().StringVar(&startFrom, "from", "earliest", "Start consuming from (start|latest)")
-	ReceiveCmd.Flags().StringVar(&receiveGroup, "group", "", "Group name (optional)")
-	ReceiveCmd.Flags().BoolVar(&dynamicGroup, "dynamic-group", false, "Use dynamic group (optional)")
+			// Check for dynamic group flag
+			if cbr.receiveCfg.dynamicGroup {
+				// Create a unique consumer group name if dynamicGroup is true
+				cbr.receiveCfg.receiveGroup = fmt.Sprintf("%s-%d", cbr.receiveCfg.receiveGroup, time.Now().UnixNano())
+				log.Printf("Dynamic group created: '%s'\n", cbr.receiveCfg.receiveGroup)
+			}
 
-	err := ReceiveCmd.MarkFlagRequired("server")
-	if err != nil {
-		log.Printf("failed to define flag: %s", receiveServer)
+			// Use the injected service to receive messages
+			if err := cbr.receiveService.ReadMessages(cbr.receiveCfg.receiveTopic); err != nil {
+				log.Fatalf("Failed to receive messages: %s", err)
+			}
+		},
 	}
 
-	err = ReceiveCmd.MarkFlagRequired("channel")
+	cbr.rootCmd.AddCommand(receiveCmd)
+
+	// Define flags for the receive command
+	receiveCmd.Flags().StringVar(&cbr.receiveCfg.receiveServer, "server", "", "Kafka connection string (required)")
+	receiveCmd.Flags().StringVar(&cbr.receiveCfg.receiveTopic, "channel", "", "Kafka topic (required)")
+	receiveCmd.Flags().StringVar(&cbr.receiveCfg.startFrom, "from", "earliest", "Start consuming from (start|latest)")
+	receiveCmd.Flags().StringVar(&cbr.receiveCfg.receiveGroup, "group", "", "Group name (optional)")
+	receiveCmd.Flags().BoolVar(&cbr.receiveCfg.dynamicGroup, "dynamic-group", false, "Use dynamic group (optional)")
+
+	err := receiveCmd.MarkFlagRequired("server")
 	if err != nil {
-		log.Printf("failed to define flag: %s", receiveTopic)
+		log.Printf("failed to define flag: %s", cbr.receiveCfg.receiveServer)
+	}
+
+	err = receiveCmd.MarkFlagRequired("channel")
+	if err != nil {
+		log.Printf("failed to define flag: %s", cbr.receiveCfg.receiveTopic)
 	}
 }
