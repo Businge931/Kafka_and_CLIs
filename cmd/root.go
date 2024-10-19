@@ -18,6 +18,7 @@ type (
 		ReadMessages(topic string) error
 	}
 
+	// CobraCommander GI JOE!
 	CobraCommander struct {
 		rootCmd        *cobra.Command
 		sendCfg        sendConfig
