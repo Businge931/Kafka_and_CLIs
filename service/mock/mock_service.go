@@ -112,3 +112,54 @@ func (mr *MockMessageConsumerMockRecorder) ReadMessages(topic any) *gomock.Call 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadMessages", reflect.TypeOf((*MockMessageConsumer)(nil).ReadMessages), topic)
 }
+
+// MockMessageService is a mock of MessageService interface.
+type MockMessageService struct {
+	ctrl     *gomock.Controller
+	recorder *MockMessageServiceMockRecorder
+}
+
+// MockMessageServiceMockRecorder is the mock recorder for MockMessageService.
+type MockMessageServiceMockRecorder struct {
+	mock *MockMessageService
+}
+
+// NewMockMessageService creates a new mock instance.
+func NewMockMessageService(ctrl *gomock.Controller) *MockMessageService {
+	mock := &MockMessageService{ctrl: ctrl}
+	mock.recorder = &MockMessageServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMessageService) EXPECT() *MockMessageServiceMockRecorder {
+	return m.recorder
+}
+
+// ReadMessages mocks base method.
+func (m *MockMessageService) ReadMessages(topic string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadMessages", topic)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReadMessages indicates an expected call of ReadMessages.
+func (mr *MockMessageServiceMockRecorder) ReadMessages(topic any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadMessages", reflect.TypeOf((*MockMessageService)(nil).ReadMessages), topic)
+}
+
+// SendMessage mocks base method.
+func (m *MockMessageService) SendMessage(topic, message string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessage", topic, message)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendMessage indicates an expected call of SendMessage.
+func (mr *MockMessageServiceMockRecorder) SendMessage(topic, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockMessageService)(nil).SendMessage), topic, message)
+}
