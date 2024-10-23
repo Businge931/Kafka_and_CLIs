@@ -97,7 +97,7 @@ func TestReadMessages(t *testing.T) {
 		wantErr        error
 	}{
 		{
-			name: "Successful message read",
+			name: "Success/message read",
 			args: args{
 				topic: "myTopic",
 			},
@@ -107,7 +107,7 @@ func TestReadMessages(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "Empty topic error",
+			name: "error/Empty topic",
 			args: args{
 				topic: "",
 			},
@@ -115,7 +115,7 @@ func TestReadMessages(t *testing.T) {
 			wantErr:        models.ErrEmptyTopic,
 		},
 		{
-			name: "Failed to read messages",
+			name: "error/Failed to read messages",
 			args: args{
 				topic: "myTopic",
 			},
