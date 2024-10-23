@@ -9,7 +9,7 @@ import (
 	"github.com/Businge931/Kafka_and_CLIs/models"
 )
 
-const maxRetries = 5
+const MaxRetries = 5
 
 func (svc *Service) SendMessage(topic, message string) error {
 	if topic == "" {
@@ -24,14 +24,14 @@ func (svc *Service) SendMessage(topic, message string) error {
 
 	var lastError error
 
-	for attempt := range maxRetries {
+	for attempt := range MaxRetries {
 		err := svc.producer.SendMessage(topic, message)
 		if err == nil {
 			return nil
 		}
 
 		lastError = err
-		log.Errorf("Failed to send message (attempt %d/%d): %v", attempt+1, maxRetries, err)
+		log.Errorf("Failed to send message (attempt %d/%d): %v", attempt+1, MaxRetries, err)
 		time.Sleep(time.Duration(500*(1<<attempt)) * time.Millisecond) // Exponential backoff
 	}
 

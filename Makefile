@@ -2,7 +2,7 @@ APP = kafka_and_CLIs
 GOBASE = $(shell pwd)
 GOBIN = $(GOBASE)/build/bin
 LINT_PATH = $(GOBASE)/build/lint
-TEST_PATH = $(GOBASE)/scraper
+TEST_PATH = $(GOBASE)/service
 
 ###  mockgen -source=producer/producer.go -destination=producer/mocks/mock_producer.go -package=mocks
 
@@ -50,6 +50,8 @@ lint-fix:
 install-golangci: ## Install the correct version of lint
 	@GOBIN=$(LINT_PATH) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.1
 	
+run-tests: ## Run tests 
+	cd $(TEST_PATH) && go test .
 test-cover: ## Run tests with coverage
 	cd $(TEST_PATH) && go test -cover
 
